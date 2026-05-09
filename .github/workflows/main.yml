@@ -1,0 +1,32 @@
+name: Upstream Sync
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 每天 UTC 时间 0 点自动运行一次
+  workflow_dispatch:    # 允许在 Actions 页面手动触发
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          target_sync_branch: main # 你的分支名称，通常是 main 或 master
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_branch: main # 上游仓库的分支名称
+          upstream_sync_repo: 5d5d5f5f5f/abc # 替换为上游仓库的所有者和名称，例如：torvalds/linux
+
+      - name: Check for Failure
+        if: failure()
+        run: echo "同步失败，可能存在代码冲突，需要手动解决！"
